@@ -1,0 +1,103 @@
+#ifndef FUNZIONI_H
+#define FUNZIONI_H
+
+#include "Arduino.h"
+// Utilizzo display
+//Include
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+
+// Definizione costanti display
+#define INDIRIZZO_DISPLAY 0x3c // Indirizzo I2C display
+#define LARGHEZZA_DISPLAY 128 // Larghezza del displayth, in pixels
+#define ALTEZZA_DISPLAY 64 // Altezza display, in pixels
+#define RESET_DISPLAY -1   //  Pin di reset se il tuo display e provvisto senno -1 come nel mio caso
+
+// Ora creiamo l'oggetto display 
+Adafruit_SH1106G display = Adafruit_SH1106G(LARGHEZZA_DISPLAY, ALTEZZA_DISPLAY, &Wire, RESET_DISPLAY);
+
+// Funzioni Utilizzate
+void setup_display();
+void iniziamo();
+void gioco(int btn);
+void personaggio(int x, int y, int l, int h);
+void ostacolo(int x, int y, int l, int h);
+
+//*-------- Personaggio --------*
+void ostacolo(int x, int y, int l, int h){
+  display.drawRect(x, y, l , h  , SH110X_WHITE);
+  }
+//*-------- Personaggio --------*
+void personaggio(int x, int y, int l, int h){
+  display.fillRect(x, y, l , h  , SH110X_WHITE);
+  }
+
+//*-------- Gioco --------*
+#define L_personaggio 20
+#define H_personaggio 20
+#define L_ostacolo 20
+#define H_ostacolo 20
+int pos_personaggio[]={10,ALTEZZA_DISPLAY - H_personaggio};
+int pos_ostacolo[]={LARGHEZZA_DISPLAY,ALTEZZA_DISPLAY - H_ostacolo};
+bool v_ostacolo=true;
+int i=0;
+
+void gioco(int btn){
+  display.clearDisplay();
+    display.drawLine(0,ALTEZZA_DISPLAY-1,LARGHEZZA_DISPLAY,ALTEZZA_DISPLAY-1, SH110X_WHITE); //Linea di bordo inferiore
+    personaggio(pos_personaggio[0], pos_personaggio[1],L_personaggio, H_personaggio);
+    if (digitalRead(btn)){
+      pos_personaggio[1]=ALTEZZA_DISPLAY-(H_ostacolo*2)-5;
+      } else {
+      pos_personaggio[1]=ALTEZZA_DISPLAY-H_personaggio;
+      }
+      
+    if (v_ostacolo){
+       ostacolo(pos_ostacolo[0], pos_ostacolo[1],L_ostacolo, H_ostacolo);
+       pos_ostacolo[0]=LARGHEZZA_DISPLAY-i;
+       i++;
+       if (i==LARGHEZZA_DISPLAY){
+        i=0;
+        
+        }
+    }
+  
+  display.display();
+  }
+
+  
+
+//*-------- Iniziamo --------*
+void iniziamo(){
+  display.clearDisplay();
+  display.setCursor(16,15);
+  display.setTextSize(3,3);
+  display.println ("START");
+  display.setTextSize(1);
+  display.display();
+  }
+
+//*-------- Setup Display --------*
+void setup_display(){
+   // Avviamo la comunicazione tra Arduino e il display
+  display.begin(INDIRIZZO_DISPLAY, true); 
+  //display.setContrast (0); // Per avere il display scuro
+
+  // Impostiamo la dimensione del testo
+  display.setTextSize(1); //
+  // Impostiamo il colore del testo
+  display.setTextColor(SH110X_WHITE);
+  
+  display.clearDisplay();
+  display.setCursor(30,0);
+  display.println ("Benvenuti");
+  display.setCursor(0,15);
+  display.println ("Sei un piccolo cubo\nche dovra evitare gli stacoli.");
+  display.setCursor(0,45);
+  display.println ("Per proseguire cliccasalta");
+  display.display();
+}
+
+
+#endif
