@@ -1,0 +1,21 @@
+#include "funzioni.h"
+#define btn 2
+
+void setup(){
+  // Pin Fisici
+  pinMode (btn,INPUT);
+  //setup Display
+  setup_display();
+  delay (500);
+  bool a=digitalRead(btn);
+  while (a==false) {
+    a=digitalRead(btn);
+  }
+
+  iniziamo();
+  delay(1000);
+}
+  
+void loop() {
+    gioco(btn);
+  }
