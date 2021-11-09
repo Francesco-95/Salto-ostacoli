@@ -14,90 +14,150 @@
 #define ALTEZZA_DISPLAY 64 // Altezza display, in pixels
 #define RESET_DISPLAY -1   //  Pin di reset se il tuo display e provvisto senno -1 come nel mio caso
 
-// Ora creiamo l'oggetto display 
+// Ora creiamo l'oggetto display
 Adafruit_SH1106G display = Adafruit_SH1106G(LARGHEZZA_DISPLAY, ALTEZZA_DISPLAY, &Wire, RESET_DISPLAY);
 
 // Funzioni Utilizzate
-void setup_display();
-void iniziamo();
-void gioco(int btn);
-void personaggio(int x, int y, int l, int h);
-void ostacolo(int x, int y, int l, int h);
+void setup_display ();
+void iniziamo ();
+void gioco (int btn);
+void personaggio (int x, int y, int l, int h);
+void ostacolo (int x, int y, int l, int h);
 
 //*-------- Personaggio --------*
-void ostacolo(int x, int y, int l, int h){
+void ostacolo(int x, int y, int l, int h) {
   display.drawRect(x, y, l , h  , SH110X_WHITE);
-  }
+}
 //*-------- Personaggio --------*
-void personaggio(int x, int y, int l, int h){
+void personaggio(int x, int y, int l, int h) {
   display.fillRect(x, y, l , h  , SH110X_WHITE);
-  }
+}
 
 //*-------- Gioco --------*
 #define L_personaggio 20
 #define H_personaggio 20
 #define L_ostacolo 20
 #define H_ostacolo 20
-int pos_personaggio[]={10,ALTEZZA_DISPLAY - H_personaggio};
-int pos_ostacolo[]={LARGHEZZA_DISPLAY,ALTEZZA_DISPLAY - H_ostacolo};
-bool v_ostacolo=true;
-int i=0;
+#define max_ostacolo 4
 
-void gioco(int btn){
+int pos_personaggio[] = {10, ALTEZZA_DISPLAY - H_personaggio};
+int pos_ostacolo[] = {LARGHEZZA_DISPLAY, ALTEZZA_DISPLAY - H_ostacolo};
+int pos = ALTEZZA_DISPLAY - (H_ostacolo * 2) - 5;
+int i = 0;
+int p=0; // punti
+int v=3;// vite
+
+bool v_ostacolo = true; //  Visibilità ostacolo
+bool v_p = true; // Per contare 1 punto per volta
+bool su = true; // controllare se l'ostacolo è alto
+
+void gioco(int btn) {
+  String msg = " Vite = " + String(v) + " Punti = " + String(p); 
   display.clearDisplay();
-    display.drawLine(0,ALTEZZA_DISPLAY-1,LARGHEZZA_DISPLAY,ALTEZZA_DISPLAY-1, SH110X_WHITE); //Linea di bordo inferiore
-    personaggio(pos_personaggio[0], pos_personaggio[1],L_personaggio, H_personaggio);
-    if (digitalRead(btn)){
-      pos_personaggio[1]=ALTEZZA_DISPLAY-(H_ostacolo*2)-5;
-      } else {
-      pos_personaggio[1]=ALTEZZA_DISPLAY-H_personaggio;
-      }
-      
-    if (v_ostacolo){
-       ostacolo(pos_ostacolo[0], pos_ostacolo[1],L_ostacolo, H_ostacolo);
-       pos_ostacolo[0]=LARGHEZZA_DISPLAY-i;
-       i++;
-       if (i==LARGHEZZA_DISPLAY){
-        i=0;
-        
-        }
-    }
-  
-  display.display();
+  display.setCursor(3, 4);
+  display.println (msg);
+  display.drawLine(0, ALTEZZA_DISPLAY - 1, LARGHEZZA_DISPLAY, ALTEZZA_DISPLAY - 1, SH110X_WHITE); //Linea di bordo inferiore
+
+  if (v_ostacolo) {
+    ostacolo(pos_ostacolo[0], pos_ostacolo[1], L_ostacolo, H_ostacolo);
   }
 
-  
+  personaggio(pos_personaggio[0], pos_personaggio[1], L_personaggio, H_personaggio);
+  display.display();
+
+  if (digitalRead(btn)) {
+    pos_personaggio[1] = ALTEZZA_DISPLAY - (H_ostacolo * 2) - 5;
+  } else {
+    pos_personaggio[1] = ALTEZZA_DISPLAY - H_personaggio;
+  }
+
+  if ((v_ostacolo)) {
+    i++;
+    pos_ostacolo[0] = LARGHEZZA_DISPLAY - i;
+    if (i > LARGHEZZA_DISPLAY + L_ostacolo) {
+      i = 0;
+      v_p=true;
+      if (random(1,10)<5){
+        pos_ostacolo[1]=ALTEZZA_DISPLAY - (H_ostacolo*2) - 5;
+        su=false;
+      } else {
+          pos_ostacolo[1]=ALTEZZA_DISPLAY - H_ostacolo;
+          su=true;
+        }
+    }
+  }
+   if ((pos_personaggio [0] > pos_ostacolo[0]+ L_ostacolo + 1) and v_p){
+      p++;    
+      v_p=false; 
+  }  
+  if ((pos_ostacolo[0] < pos_personaggio[0] + L_personaggio) and (pos_ostacolo[0] + L_ostacolo > pos_personaggio[0])) {
+    if ((pos_ostacolo[1] <= pos_personaggio[1] and su)or(pos_ostacolo[1] >= pos_personaggio[1] and !su)){
+      v_ostacolo = false;
+      i = 0;
+      v--;
+      for (int i=0; i<=5; i++){
+        display.clearDisplay();
+        int x = pos_personaggio[0]+(pos_personaggio[0]/2);
+        int y = pos_personaggio[1]+(L_personaggio/2);
+        display.fillCircle(x, y, 10+i , SH110X_WHITE);
+        display.display();
+        delay(100);
+      } 
+    }
+  } 
+  if (v<=0){
+    display.clearDisplay();
+    display.setCursor(16, 2);
+    display.setTextSize(2,2);
+    display.println ("GAME OVER");
+    display.setTextSize(1);
+    display.setCursor(0, 40);
+    display.println ("Premi SALTA per rico\nminciare");
+    display.display();
+    bool a=digitalRead(btn);
+    while (a==false) {
+        v=3;
+        p=0;
+        a=digitalRead(btn);
+    }
+  }
+  v_ostacolo = true;
+}
+
+
 
 //*-------- Iniziamo --------*
-void iniziamo(){
+void iniziamo() {
   display.clearDisplay();
-  display.setCursor(16,15);
-  display.setTextSize(3,3);
+  display.setCursor(16, 15);
+  display.setTextSize(3, 3);
   display.println ("START");
   display.setTextSize(1);
   display.display();
-  }
+  delay(1000);
+  display.clearDisplay();
+  display.display();
+}
 
 //*-------- Setup Display --------*
-void setup_display(){
-   // Avviamo la comunicazione tra Arduino e il display
-  display.begin(INDIRIZZO_DISPLAY, true); 
+void setup_display() {
+  // Avviamo la comunicazione tra Arduino e il display
+  display.begin(INDIRIZZO_DISPLAY, true);
   //display.setContrast (0); // Per avere il display scuro
 
   // Impostiamo la dimensione del testo
   display.setTextSize(1); //
   // Impostiamo il colore del testo
   display.setTextColor(SH110X_WHITE);
-  
+
   display.clearDisplay();
-  display.setCursor(30,0);
+  display.setCursor(30, 0);
   display.println ("Benvenuti");
-  display.setCursor(0,15);
+  display.setCursor(0, 15);
   display.println ("Sei un piccolo cubo\nche dovra evitare gli stacoli.");
-  display.setCursor(0,45);
+  display.setCursor(0, 45);
   display.println ("Per proseguire cliccasalta");
   display.display();
 }
-
 
 #endif
